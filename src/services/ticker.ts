@@ -1,8 +1,11 @@
 import { io } from 'socket.io-client';
+import { TickerContextType } from '../providers/ticker/types';
+
+const LIMIT = 20;
 
 let socket = null;
 
-function tickerConnect(stockSymbol: string) {
+function tickerConnect(stockSymbol: string, setData: TickerContextType['setData']) {
   socket = io('http://localhost:4000');
 
   socket.on('connect', () => {
@@ -20,7 +23,14 @@ function tickerConnect(stockSymbol: string) {
   socket.emit('ticker', stockSymbol);
 
   socket.on(stockSymbol, (data: any) => {
-    console.log(data);
+    setData((currentData) => {
+      const dataToSet = [...currentData, JSON.parse(data)];
+      if (dataToSet.length > LIMIT) {
+        dataToSet.shift();
+      }
+
+      return dataToSet;
+    });
   });
 
   socket.on('disconnect', () => {
